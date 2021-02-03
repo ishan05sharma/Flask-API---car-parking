@@ -9,6 +9,7 @@ parking_slots = [0,0,0,0,0]
 total = 5
 
 @app.route("/")
+@limiter.limit('10/10 second')
 def index():
     return jsonify({"to park": "use /park/car_number",
                     "to unpark": "use /unpark/car_number",
@@ -17,6 +18,7 @@ def index():
     })
 
 @app.route('/park/<int:num>', methods = ['GET'])    
+@limiter.limit('10/10 second')
 def park_car(num):
     for i in range(0,5):
         if parking_slots[i] == num:
@@ -37,6 +39,7 @@ def park_car(num):
 
 
 @app.route('/unpark/<int:num>', methods = ['GET'])
+@limiter.limit('10/10 second')
 def unpark_car(num):
     if num>=5:
         return "invalid slot number"
@@ -71,7 +74,8 @@ def slot_info(num):
             "found on" : i,
             })
 
-        elif i==num:
+    for i in range(0,5):
+        if i==num:
             parking_slots[i] = 0
             return jsonify({
             "car number" : parking_slots[i],   
