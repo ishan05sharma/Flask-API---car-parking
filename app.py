@@ -1,12 +1,16 @@
 from flask import Flask, jsonify, request
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 app = Flask(__name__)
 limiter = Limiter(app, key_func=get_remote_address)
 
-parking_slots = [0,0,0,0,0]
-total = 5
+total_slots = int(os.getenv("parking_lot_size"))
+parking_slots = [0] * total_slots
+
 
 @app.route("/")
 @limiter.limit('10/10 second')
@@ -20,11 +24,11 @@ def index():
 @app.route('/park/<int:num>', methods = ['GET'])    
 @limiter.limit('10/10 second')
 def park_car(num):
-    for i in range(0,5):
+    for i in range(0,total_slots):
         if parking_slots[i] == num:
             return jsonify({"car parked at": i})
 
-    for i in range(0,5):
+    for i in range(0,total_slots):
         if parking_slots[i] == 0:
             parking_slots[i] = num
             return jsonify({'Car Number': num,
@@ -49,7 +53,7 @@ def unpark_car(num):
             "parking slot" : "Already free"
         })
 
-    for i in range(0,5):
+    for i in range(0,total_slots):
         if i+1 == num:
             parking_slots[i] = 0
             return jsonify({
@@ -66,20 +70,20 @@ def unpark_car(num):
 @app.route('/info/<int:num>', methods = ['GET'])
 @limiter.limit('10/10 second')
 def slot_info(num):
-    for i in range(0,5):
+    for i in range(0,total_slots):
         if parking_slots[i] == num:
             parking_slots[i] = 0
             return jsonify({
             "car number" : num,    
-            "found on" : i,
+            "found on slot number" : i+1,
             })
 
-    for i in range(0,5):
+    for i in range(0,total_slots):
         if i==num:
             parking_slots[i] = 0
             return jsonify({
             "car number" : parking_slots[i],   
-            "found on" : i,
+            "found on slot number" : i+1,
             })
         
     return jsonify(
